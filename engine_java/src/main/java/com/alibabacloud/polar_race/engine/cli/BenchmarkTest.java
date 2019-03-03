@@ -89,22 +89,22 @@ public class BenchmarkTest {
 
         System.out.println("=======================start range=========================");
         //////////////////////////////////////////////////////
-        long startTime = System.currentTimeMillis();
-        Ranger[] rg = new Ranger[64];
-        int rg_num = 64;
-        for (int i = 0; i < rg_num; i++) {
-            rg[i] = new Ranger(race, kvMap, i);
-            rg[i].start();
-        }
-        for (int i = 0; i < rg_num; i++) {
-            try {
-                rg[i].join();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        long stopTime = System.currentTimeMillis();
-        System.out.println("Range cost time: " + (stopTime - startTime) + "ms");
+//        long startTime = System.currentTimeMillis();
+//        Ranger[] rg = new Ranger[64];
+//        int rg_num = 64;
+//        for (int i = 0; i < rg_num; i++) {
+//            rg[i] = new Ranger(race, kvMap, i);
+//            rg[i].start();
+//        }
+//        for (int i = 0; i < rg_num; i++) {
+//            try {
+//                rg[i].join();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        long stopTime = System.currentTimeMillis();
+//        System.out.println("Range cost time: " + (stopTime - startTime) + "ms");
         System.out.println("=======================end range=========================");
         race.close();
         //////////////////////////////////////////////////////////

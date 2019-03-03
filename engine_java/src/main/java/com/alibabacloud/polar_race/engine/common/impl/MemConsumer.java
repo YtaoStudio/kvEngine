@@ -1,7 +1,7 @@
 package com.alibabacloud.polar_race.engine.common.impl;
 
 import gnu.trove.map.hash.TLongIntHashMap;
-import io.mappedbus.MemoryMappedFile;
+import com.alibabacloud.polar_race.engine.common.utils.MemoryMappedFile;
 
 import static com.alibabacloud.polar_race.engine.common.utils.ByteToInt.byteArrayToLong;
 
@@ -41,6 +41,6 @@ public class MemConsumer extends Thread {
                 System.exit(-1);
             }
         }
-//        System.out.println(Thread.currentThread().getName() + " exit," + index + "," + tmap.size());
+        System.out.println(Thread.currentThread().getName() + " exit," + "," + tmap.size());
     }
 }

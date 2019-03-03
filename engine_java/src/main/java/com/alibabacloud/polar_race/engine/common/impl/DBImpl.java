@@ -23,10 +23,10 @@ public class DBImpl {
     private ConcurrentHashMap<Long, Integer> threadValueLog;
     private AtomicInteger whichValueLog = new AtomicInteger(0);
 
-    /*  仅用一个keylog文件  */
+    /*  用64个keylog文件  */
     private MemoryLog keyLog[];
-    //因为只用了一个keylog文件，记录位置
-    private AtomicInteger kelogWrotePosition[]; //  = new AtomicInteger(0)
+    // 因为用了64个keylog文件，记录位置
+    private AtomicInteger keylogWrotePosition[];
 
     /*  内存恢复hash   */
     private TLongIntHashMap[] tmap;
@@ -45,12 +45,9 @@ public class DBImpl {
             e.printStackTrace();
         }
 
-        //创建64个value文件，分别命名value0--63
+        //创建64个key/value文件，分别命名k/v0--63
         this.valueLog = new ValueLog[64];
         this.keyLog = new MemoryLog[64];
-//        for (int i = 0; i < 64; i++) {
-//            valueLog[i] = new ValueLog(path, i);
-//        }
         //判断KeyLog文件是否存在,如果存在，说明之前写过数据，进行内存恢复
         File dir = new File(path, "k0");
         if (dir.exists()) {
@@ -58,19 +55,19 @@ public class DBImpl {
             //如果找不到key就会返回-1
             this.tmap = new TLongIntHashMap[64];
             this.consumers = new MemConsumer[64];
-            recoverHashtableMulti(path);//hashtable多线程恢复
+            recoverHashtableMulti(path); // TLongIntHashMap多线程恢复
             System.out.println("Recover finished");
         }
 
         //如果不存在，说明是第一次open
         else {
             this.threadValueLog = new ConcurrentHashMap<>(64);
-            this.kelogWrotePosition = new AtomicInteger[64];
+            this.keylogWrotePosition = new AtomicInteger[64];
             System.out.println("---------------Start first write---------------");
             for (int i = 0; i < 64; i++) {
                 valueLog[i] = new ValueLog(path, i, false);
                 keyLog[i] = new MemoryLog(path, i, false);
-                kelogWrotePosition[i] = new AtomicInteger(0);
+                keylogWrotePosition[i] = new AtomicInteger(0);
             }
         }
     }
@@ -85,7 +82,8 @@ public class DBImpl {
         for (int i = 0; i < 64; i++) {
             valueLog[i] = new ValueLog(path, i, true);
             keyLog[i] = new MemoryLog(path, i, true);//keylog恢复
-            tmap[i] = new TLongIntHashMap(1200000, 1.0F, -1L, -1);
+            tmap[i] = new TLongIntHashMap();
+//            tmap[i] = new TLongIntHashMap(1200000, 1.0F, -1L, -1);
             // todo add comsumer for each valueLog number
             consumers[i] = new MemConsumer(keyLog[i], tmap[i]);
             consumers[i].start();
@@ -122,7 +120,7 @@ public class DBImpl {
 //        int index = bytesGetTwo(key) % 64;
 
         //因为只用一个keylog，所以要有个原子量记录写在keylog中的位置
-        keyLog[index].putKey(key, offset, kelogWrotePosition[index].getAndAdd(12));
+        keyLog[index].putKey(key, offset, keylogWrotePosition[index].getAndAdd(12));
 
         valueLog[valueLogNo].putMessageDirect(threadLocalReadBuffer.get().wrap(value));
 //        valueLog[valueLogNo].putMessageDirect(value);

@@ -39,8 +39,4 @@ public class KeyComparable implements Comparable {
         }
         return 0;
     }
-
-    public static void main(String args[]) {
-        ;
-    }
 }
