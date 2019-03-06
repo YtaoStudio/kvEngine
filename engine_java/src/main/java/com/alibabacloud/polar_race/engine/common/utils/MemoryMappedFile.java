@@ -17,7 +17,7 @@
 /*
 * This class was inspired from an entry in Bryce Nyeggen's blog
 */
-package io.mappedbus;
+package com.alibabacloud.polar_race.engine.common.utils;
 
 import sun.misc.Unsafe;
 import sun.nio.ch.FileChannelImpl;

@@ -14,14 +14,14 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 public class BenchmarkTest {
 
-    public static String path = "/home/tao/software/station/tianchi/engine-v2/engine_data/";
+    public static String path = "/tmp/engine_data/";
 
     public static void main(String[] args) {
         if (args.length > 0)
             path = args[0];
 
         try {
-            System.out.println("=======================db init======================");
+            System.out.println("=======================db init=========================");
             FileUtils.deleteDirectory(new File(path));
         } catch (IOException e) {
             e.printStackTrace();

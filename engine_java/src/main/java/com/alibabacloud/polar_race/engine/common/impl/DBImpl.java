@@ -59,6 +59,7 @@ public class DBImpl {
     // 用堆外内存代替内存, Fc读数据到堆内，本质上还是先拷到堆外，再拷到堆内
 
     //    private byte[][][] cacheArray; // cachePartitionNum, PartitionSize, ValueSize
+    private Pointer pointer[];
     private Field bufferPointerField;
 
     public DBImpl(String path) {
@@ -86,6 +87,7 @@ public class DBImpl {
             writeCacheLock = new Semaphore[Constants.CACHE_PARTITION_NUM];
             readCacheLock = new Semaphore[Constants.CACHE_PARTITION_NUM];
             dBuffer = new AlignedDirectByteBuffer[Constants.CACHE_PARTITION_NUM];
+            pointer = new Pointer[Constants.CACHE_PARTITION_NUM];
             try {
                 // 反射, 获取Pointer
                 bufferPointerField = AlignedDirectByteBuffer.class.getDeclaredField("pointer");
@@ -98,6 +100,11 @@ public class DBImpl {
                 readCacheLock[i] = new Semaphore(0);
                 dBuffer[i] = AlignedDirectByteBuffer.allocate(DirectIoLib.getLibForPath(path + "/lib"),
                         max * Constants.VALUE_SIZE);
+                try {
+                    pointer[i] = (Pointer) bufferPointerField.get(dBuffer[i]);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
             }
             System.out.println("Recover finished");
         }
@@ -117,7 +124,7 @@ public class DBImpl {
                 keylogWrotePosition[i] = new AtomicInteger(0);
                 valuelogWrotePosition[i] = new AtomicLong(0L);
             }
-            System.out.println("---------------KeyLog init---------------");
+            System.out.println("---------------KeyLog init--------------------");
         }
     }
 
@@ -185,7 +192,6 @@ public class DBImpl {
             writeLocks[index].lock();
 
             // 每个valueLog100w个数据，这个只占三个字节，表示该valueLog第几个数据
-//            int num = (int) valueLogWrotePosition[index].getAndAdd(Constants.VALUE_SIZE);
             int offset = (int) (valueWriteLog[index].getWrotePosition() >> 12);
 
             // 因为用多个keyLog，所以要有个原子量记录写在keyLog array中的位置
@@ -247,14 +253,13 @@ public class DBImpl {
             // 多线程Range
             long indexCheckStart = System.currentTimeMillis();
 
-            ExecutorService service = Executors.newFixedThreadPool(Constants.CACHE_PARTITION_NUM + 1);
+            ExecutorService service = Executors.newFixedThreadPool(Constants.CACHE_PARTITION_NUM);
 
             CacheReader cacheReader[] = new CacheReader[Constants.CACHE_PARTITION_NUM];
             for (int i = 0; i < Constants.CACHE_PARTITION_NUM; i++) {
                 cacheReader[i] = new CacheReader(i, readCacheLock[i], writeCacheLock[i]);
                 service.execute(cacheReader[i]);
             }
-
 
             byte[] key;
             long keyLong = 0L;
@@ -380,17 +385,11 @@ public class DBImpl {
         }
     }
 
-
     private byte[] locateBuffer(byte[] value, int cacheIndex, int cachePos) {
 //        dBuffer[cacheIndex].position(cachePos << 12);
 //        dBuffer[cacheIndex].get(value, 0, Constants.VALUE_SIZE);
 //        return value;
-        try {
-            ((Pointer) bufferPointerField.get(dBuffer[cacheIndex])).read(cachePos << 12, value, 0, Constants.VALUE_SIZE);
-
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
+        pointer[cacheIndex].read(cachePos << 12, value, 0, Constants.VALUE_SIZE);
         return value;
     }
 

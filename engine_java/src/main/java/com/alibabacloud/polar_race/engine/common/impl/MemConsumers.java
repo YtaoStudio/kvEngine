@@ -1,6 +1,6 @@
 package com.alibabacloud.polar_race.engine.common.impl;
 
-import io.mappedbus.MemoryMappedFile;
+import com.alibabacloud.polar_race.engine.common.utils.MemoryMappedFile;
 
 import java.nio.ByteBuffer;
 
